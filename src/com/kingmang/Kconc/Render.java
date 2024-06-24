@@ -3,19 +3,11 @@ package com.kingmang.Kconc;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 import static com.kingmang.Kconc.ConvertArray.toArray1D;
 import static com.kingmang.Kconc.ConvertArray.toArray2D;
-import static com.kingmang.Kconc.Matrix.clamp;
-import static com.kingmang.Kconc.Matrix.getAngle;
-import static com.kingmang.Kconc.Matrix.getCols;
-import static com.kingmang.Kconc.Matrix.getRows;
-import static com.kingmang.Kconc.Matrix.multiplyMatrices;
-import static com.kingmang.Kconc.Matrix.screenBuffer;
-import static com.kingmang.Kconc.Matrix.setAngle;
-import static com.kingmang.Kconc.Matrix.sortVerts;
+import static com.kingmang.Kconc.Matrix.*;
 import static com.kingmang.Kconc.Screen.drawScreen;
 import static com.kingmang.Kconc.Screen.initScreen;
 
@@ -29,7 +21,7 @@ public class Render {
                 while (true) {
                     long start = System.currentTimeMillis();
                     drawScreen();
-                    setAngle(getAngle() + 0.03 * (60d / fps));
+                    angle += 0.03 * (60d / fps);
 
                     try {
                         Thread.sleep((1000 / fps) - (System.currentTimeMillis() - start));
@@ -37,9 +29,7 @@ public class Render {
                 }
             }
         };
-
         render.start();
-
         while(true) {
             Rotate.update(new double[][]{
                             // x
@@ -49,9 +39,9 @@ public class Render {
                     },
                     new double[][]{
                             // y
-                            {Math.cos(Matrix.getAngle()), 0, Math.sin(Matrix.getAngle())},
+                            {Math.cos(Matrix.angle), 0, Math.sin(Matrix.angle)},
                             {0, 1, 0},
-                            {-Math.sin(Matrix.getAngle()), 0, Math.cos(Matrix.getAngle())}
+                            {-Math.sin(Matrix.angle), 0, Math.cos(Matrix.angle)}
                     },
                     new double[][]{
                             // z
@@ -142,10 +132,10 @@ public class Render {
 
 
     public static void drawLine(char[][] screen, double x1, double y1, double x2, double y2, char ch) {
-        x1 = (getCols() / 2d) + x1 / 2d * getCols();
-        y1 = (getRows() / 2d) + y1 / -2d * getRows();
-        x2 = (getCols() / 2d) + x2 / 2d * getCols();
-        y2 = (getRows() / 2d) + y2 / -2d * getRows();
+        x1 = (cols / 2d) + x1 / 2d * cols;
+        y1 = (rows / 2d) + y1 / -2d * rows;
+        x2 = (cols / 2d) + x2 / 2d * cols;
+        y2 = (rows / 2d) + y2 / -2d * rows;
 
         int d = 0;
 
@@ -199,36 +189,38 @@ public class Render {
     }
 
     public static double[][] load(String filename) throws IOException {
-        var objFile = new Scanner(new File(filename));
-        List<List<Double>> verts = new ArrayList<>();
-        List<Integer> faces = new ArrayList<>();
+        Scanner objFile = new Scanner(new File(filename));
+        ArrayList<ArrayList<Double>> verts = new ArrayList<>();
+        ArrayList<Integer> faces = new ArrayList<>();
 
         while (objFile.hasNext()) {
-            var line = objFile.nextLine();
-
-            if (line.charAt(0) == 'v') {
-                var vert = line.split(" ");
-                List<Double> vertList = new ArrayList<>();
-                vertList.add(Double.parseDouble(vert[1]));
-                vertList.add(Double.parseDouble(vert[2]));
-                vertList.add(Double.parseDouble(vert[3]));
-                verts.add(vertList);
-            } else if (line.charAt(0) == 'f') {
-                var face = line.split(" ");
-                faces.add(Integer.parseInt(face[1]));
-                faces.add(Integer.parseInt(face[2]));
-                faces.add(Integer.parseInt(face[3]));
+            String line = objFile.nextLine();
+            switch (line.charAt(0)) {
+                case 'v':
+                    String[] vert = line.split(" ");
+                    ArrayList<Double> vertAL = new ArrayList<>();
+                    vertAL.add(Double.parseDouble(vert[1]));
+                    vertAL.add(Double.parseDouble(vert[2]));
+                    vertAL.add(Double.parseDouble(vert[3]));
+                    verts.add(vertAL);
+                    break;
+                case 'f':
+                    String[] face = line.split(" ");
+                    faces.add(Integer.parseInt(face[1]));
+                    faces.add(Integer.parseInt(face[2]));
+                    faces.add(Integer.parseInt(face[3]));
+                    break;
             }
         }
 
-        double[][] result = new double[faces.size()][3];
-        for (int i = 0; i < result.length; i++) {
+        double[][] finalArray = new double[faces.size()][3];
+        for (int i = 0; i < finalArray.length; i++) {
             for (int j = 0; j < 3; j++) {
-                result[i][j] = verts.get(faces.get(i) - 1).get(j);
+                finalArray[i][j] = verts.get(faces.get(i) - 1).get(j);
             }
         }
 
-        return result;
+        return finalArray;
     }
 
 }
